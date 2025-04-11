@@ -152,7 +152,11 @@ impl Service {
 #[tokio::main]
 async fn main() -> Result<()> {
     let all_services = Service::iter().collect::<Vec<_>>();
-    let s = Select::new("abc", all_services).prompt()?;
+    let s = Select::new(
+        "Which Client documents do you want to access?",
+        all_services,
+    )
+    .prompt()?;
     let s = s.url_expression();
 
     let url = format!("https://docs.rs/aws-sdk-{s}/latest/aws_sdk_{s}/client/struct.Client.html");
