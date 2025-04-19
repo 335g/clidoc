@@ -7,7 +7,12 @@ use strum::IntoEnumIterator;
 
 #[derive(Debug, Parser)]
 struct Cli {
-    #[arg(short, long, default_value_t = false)]
+    #[arg(
+        short,
+        long,
+        default_value_t = false,
+        help = "Access the version of the document you are using"
+    )]
     sync: bool,
 }
 
