@@ -1,6 +1,15 @@
 use anyhow::Result;
+use clap::Parser;
+use guppy::{MetadataCommand, graph::PackageGraph};
 use inquire::Select;
+use regex::Regex;
 use strum::IntoEnumIterator;
+
+#[derive(Debug, Parser)]
+struct Cli {
+    #[arg(short, long, default_value_t = false)]
+    sync: bool,
+}
 
 #[derive(Debug, Clone, Copy, strum::Display, strum::EnumIter)]
 enum Service {
@@ -147,19 +156,46 @@ impl Service {
             Service::UserNotifications => "notifications",
         }
     }
+
+    fn regex_packge_id(&self) -> Regex {
+        let mut pattern = format!("aws-sdk-{}", self.url_expression());
+        pattern.push_str(r#"@(?P<major>[0-9]+)\.(?P<minor>[0-9]+)\.(?P<patch>[0-9]+)$"#);
+        Regex::new(pattern.as_str()).unwrap()
+    }
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let cli = Cli::parse();
     let all_services = Service::iter().collect::<Vec<_>>();
     let s = Select::new(
         "Which Client documents do you want to access?",
         all_services,
     )
     .prompt()?;
-    let s = s.url_expression();
 
-    let url = format!("https://docs.rs/aws-sdk-{s}/latest/aws_sdk_{s}/client/struct.Client.html");
+    let version = if cli.sync {
+        let mut cmd = MetadataCommand::new();
+        let package_graph = PackageGraph::from_command(&mut cmd)?;
+        let re = s.regex_packge_id();
+        let mut version = "latest".to_string();
+        for id in package_graph.package_ids() {
+            let id = id.repr();
+            if let Some(caps) = re.captures(id) {
+                let major = caps.name("major").unwrap().as_str();
+                let minor = caps.name("minor").unwrap().as_str();
+                let patch = caps.name("patch").unwrap().as_str();
+                version = format!("{major}.{minor}.{patch}");
+                break;
+            }
+        }
+        version
+    } else {
+        "latest".to_string()
+    };
+    let s = s.url_expression();
+    let url =
+        format!("https://docs.rs/aws-sdk-{s}/{version}/aws_sdk_{s}/client/struct.Client.html");
     open::that(url)?;
 
     Ok(())
