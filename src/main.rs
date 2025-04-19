@@ -11,9 +11,9 @@ struct Cli {
         short,
         long,
         default_value_t = false,
-        help = "Access the version of the document you are using"
+        help = "Access the latest version of the document"
     )]
-    sync: bool,
+    latest: bool,
 }
 
 #[derive(Debug, Clone, Copy, strum::Display, strum::EnumIter)]
@@ -179,7 +179,9 @@ async fn main() -> Result<()> {
     )
     .prompt()?;
 
-    let version = if cli.sync {
+    let version = if cli.latest {
+        "latest".to_string()
+    } else {
         let mut cmd = MetadataCommand::new();
         let package_graph = PackageGraph::from_command(&mut cmd)?;
         let re = s.regex_packge_id();
@@ -195,8 +197,6 @@ async fn main() -> Result<()> {
             }
         }
         version
-    } else {
-        "latest".to_string()
     };
     let s = s.url_expression();
     let url =
