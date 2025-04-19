@@ -1,7 +1,7 @@
 # Connecting the client docs
 
 [![License][crates-badge]][crates-url]
-[![MIT licensed][mit-badge][mit-url]]
+[![MIT licensed][mit-badge]][mit-url]
 
 [crates-badge]: https://img.shields.io/crates/v/clidoc.svg
 [crates-url]: https://crates.io/crates/clidoc
